@@ -7,6 +7,16 @@ some extras. It loads into IBO Player, VLC, Kodi, TiviMate and similar players.
 Only free, publicly offered channels are included. Like the original, NSFW and
 blocklisted channels are left out.
 
+## My links
+
+| What | URL |
+|------|-----|
+| Channel browser | https://hadjiboyhmc-bit.github.io/my-tv/ |
+| Favourites (IBO Player) | `https://hadjiboyhmc-bit.github.io/my-tv/mine.m3u` |
+| Danish channels | `https://hadjiboyhmc-bit.github.io/my-tv/countries/dk.m3u` |
+| Everything | `https://hadjiboyhmc-bit.github.io/my-tv/index.m3u` |
+| TV guide (XMLTV EPG URL) | `https://hadjiboyhmc-bit.github.io/my-tv/guides/guide.xml.gz` |
+
 ## What you get
 
 **The same as iptv-org** (checked with `npm run compare`: 818 of 820 shared
