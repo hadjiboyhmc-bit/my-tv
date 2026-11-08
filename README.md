@@ -9,13 +9,16 @@ blocklisted channels are left out.
 
 ## My links
 
+Playlists are published daily to the `playlists` branch and served from there:
+
 | What | URL |
 |------|-----|
-| Channel browser | https://hadjiboyhmc-bit.github.io/my-tv/ |
-| Favourites (IBO Player) | `https://hadjiboyhmc-bit.github.io/my-tv/mine.m3u` |
-| Danish channels | `https://hadjiboyhmc-bit.github.io/my-tv/countries/dk.m3u` |
-| Everything | `https://hadjiboyhmc-bit.github.io/my-tv/index.m3u` |
-| TV guide (XMLTV EPG URL) | `https://hadjiboyhmc-bit.github.io/my-tv/guides/guide.xml.gz` |
+| Favourites (IBO Player) | `https://raw.githubusercontent.com/hadjiboyhmc-bit/my-tv/playlists/mine.m3u` |
+| Danish channels | `https://raw.githubusercontent.com/hadjiboyhmc-bit/my-tv/playlists/countries/dk.m3u` |
+| Everything | `https://raw.githubusercontent.com/hadjiboyhmc-bit/my-tv/playlists/index.m3u` |
+| TV guide (XMLTV EPG URL) | `https://raw.githubusercontent.com/hadjiboyhmc-bit/my-tv/playlists/guides/guide.xml.gz` (after the first full run) |
+| List of all playlists | [PLAYLISTS.md on the playlists branch](https://github.com/hadjiboyhmc-bit/my-tv/blob/playlists/PLAYLISTS.md) |
+| Channel browser (only if GitHub Pages is on) | https://hadjiboyhmc-bit.github.io/my-tv/ |
 
 ## What you get
 

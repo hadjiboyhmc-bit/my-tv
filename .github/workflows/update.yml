@@ -8,16 +8,18 @@ on:
     branches: [main]
 
 permissions:
-  contents: read
+  contents: write   # to push the playlists branch
   pages: write
   id-token: write
 
 concurrency:
-  group: pages
+  group: update-playlists
   cancel-in-progress: true
 
 env:
-  SITE_URL: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}
+  # Playlists are served straight from the "playlists" branch, which works for
+  # any public repository with no extra settings. GitHub Pages is optional.
+  SITE_URL: https://raw.githubusercontent.com/${{ github.repository }}/playlists
 
 jobs:
   build:
@@ -56,6 +58,21 @@ jobs:
       - name: Rebuild with check results and guide
         run: node scripts/build.mjs
 
+      # Replace the playlists branch with today's files. It always holds a
+      # single commit, so the repository does not grow day by day.
+      - name: Publish to the playlists branch
+        run: |
+          mkdir ../publish
+          tar cf - -C dist --exclude=./working --exclude=./api --exclude=./index.html --exclude=./.nojekyll . | tar xf - -C ../publish
+          cd ../publish
+          git init -q -b playlists
+          git add -A
+          git -c user.name="github-actions[bot]" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
+            commit -qm "Playlists built $(date -u +%Y-%m-%dT%H:%MZ)"
+          git push -f "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git" playlists
+
+      # Only used if GitHub Pages is switched on (Settings -> Pages -> Source:
+      # GitHub Actions). It adds the channel browser website.
       - uses: actions/upload-pages-artifact@v3
         with:
           path: dist
@@ -63,6 +80,7 @@ jobs:
   deploy:
     needs: build
     runs-on: ubuntu-latest
+    continue-on-error: true   # Pages is optional; the playlists are already published
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
