@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>My TV</title>
+<style>
+  :root {
+    --bg: #f7f7f8; --panel: #fff; --text: #18181b; --muted: #6b7280; --line: #e4e4e7;
+    --accent: #2563eb; --ok: #15803d; --bad: #b91c1c; --chip: #f1f5f9;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #0f1115; --panel: #171a21; --text: #e5e7eb; --muted: #9ca3af; --line: #272b35;
+      --accent: #60a5fa; --ok: #4ade80; --bad: #f87171; --chip: #1f2430; }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text);
+    font: 15px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  header, main { max-width: 1100px; margin: 0 auto; padding: 16px; }
+  h1 { font-size: 22px; margin: 8px 0 2px; }
+  .sub { color: var(--muted); font-size: 13px; }
+  .tabs { display: flex; gap: 6px; margin: 16px 0 12px; }
+  .tabs button { border: 1px solid var(--line); background: var(--panel); color: var(--text);
+    padding: 7px 14px; border-radius: 8px; cursor: pointer; font: inherit; }
+  .tabs button[aria-selected="true"] { border-color: var(--accent); color: var(--accent); }
+  .controls { display: grid; grid-template-columns: 2fr 1fr 1fr auto; gap: 8px; margin-bottom: 12px; }
+  @media (max-width: 700px) { .controls { grid-template-columns: 1fr 1fr; } .controls input[type=search] { grid-column: 1 / -1; } }
+  input, select { width: 100%; padding: 9px 10px; border: 1px solid var(--line); border-radius: 8px;
+    background: var(--panel); color: var(--text); font: inherit; }
+  label.toggle { display: flex; align-items: center; gap: 6px; white-space: nowrap; color: var(--muted); }
+  label.toggle input { width: auto; }
+  .count { color: var(--muted); font-size: 13px; margin: 0 0 8px; }
+  .list { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+  .row { display: grid; grid-template-columns: 44px 1fr auto; gap: 12px; align-items: center;
+    padding: 9px 12px; border-top: 1px solid var(--line); }
+  .row:first-child { border-top: 0; }
+  .logo { width: 44px; height: 30px; object-fit: contain; }
+  .title { font-weight: 600; overflow-wrap: anywhere; }
+  .meta { color: var(--muted); font-size: 12.5px; overflow-wrap: anywhere; }
+  .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; background: var(--muted); }
+  .dot.ok { background: var(--ok); } .dot.bad { background: var(--bad); }
+  button.copy { border: 1px solid var(--line); background: var(--chip); color: var(--text);
+    border-radius: 6px; padding: 5px 10px; cursor: pointer; font: inherit; font-size: 13px; }
+  table { width: 100%; border-collapse: collapse; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+  th, td { text-align: left; padding: 8px 12px; border-top: 1px solid var(--line); font-size: 14px; }
+  th { color: var(--muted); font-weight: 500; border-top: 0; }
+  td.num { text-align: right; font-variant-numeric: tabular-nums; }
+  td code { font-size: 12.5px; overflow-wrap: anywhere; }
+  .more { display: block; margin: 12px auto; }
+  [hidden] { display: none !important; }
+</style>
+</head>
+<body>
+<header>
+  <h1>My TV</h1>
+  <div class="sub" id="meta">Loading…</div>
+  <div class="tabs" role="tablist">
+    <button role="tab" aria-selected="true" data-tab="channels">Channels</button>
+    <button role="tab" aria-selected="false" data-tab="playlists">Playlists</button>
+  </div>
+</header>
+<main>
+  <section id="channels">
+    <div class="controls">
+      <input type="search" id="q" placeholder="Search channels" autocomplete="off">
+      <select id="country"><option value="">All countries</option></select>
+      <select id="category"><option value="">All categories</option></select>
+      <label class="toggle"><input type="checkbox" id="working"> Working only</label>
+    </div>
+    <p class="count" id="count"></p>
+    <div class="list" id="list"></div>
+    <button class="copy more" id="more" hidden>Show more</button>
+  </section>
+  <section id="playlists" hidden>
+    <div class="controls" style="grid-template-columns: 1fr auto">
+      <select id="ptype">
+        <option value="index">Main</option><option value="country">By country</option>
+        <option value="category">By category</option><option value="language">By language</option>
+        <option value="region">By region</option><option value="subdivision">By subdivision</option>
+      </select>
+      <label class="toggle"><input type="checkbox" id="pworking"> Working only</label>
+    </div>
+    <table><thead><tr><th>Name</th><th style="text-align:right">Channels</th><th>Playlist URL</th><th></th></tr></thead>
+      <tbody id="ptable"></tbody></table>
+  </section>
+</main>
+<script>
+const $ = (id) => document.getElementById(id);
+const root = location.href.replace(/[^/]*$/, '');
+let streams = [], meta = {}, playlists = [], shown = 100;
+
+async function load() {
+  [streams, meta, playlists] = await Promise.all(
+    ['api/streams.json', 'api/meta.json', 'api/playlists.json'].map((p) => fetch(p).then((r) => r.json())));
+  $('meta').textContent = `${streams.length.toLocaleString()} streams` +
+    (meta.working != null ? `, ${meta.working.toLocaleString()} answered the last check` : '') +
+    ` · built ${new Date(meta.builtAt).toLocaleString()}`;
+
+  const countries = [...new Set(streams.flatMap((s) => s.countries))]
+    .map((c) => [c, meta.countries[c]?.name || c]).sort((a, b) => a[1].localeCompare(b[1]));
+  $('country').insertAdjacentHTML('beforeend', '<option value="INT">International</option>' +
+    countries.map(([c, n]) => `<option value="${c}">${meta.countries[c]?.flag || ''} ${esc(n)}</option>`).join(''));
+  const cats = Object.entries(meta.categories).sort((a, b) => a[1].localeCompare(b[1]));
+  $('category').insertAdjacentHTML('beforeend', cats.map(([c, n]) => `<option value="${c}">${esc(n)}</option>`).join(''));
+  renderChannels(); renderPlaylists();
+}
+
+const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+
+function filtered() {
+  const q = $('q').value.trim().toLowerCase(), c = $('country').value, cat = $('category').value, w = $('working').checked;
+  return streams.filter((s) =>
+    (!q || s.title.toLowerCase().includes(q) || (s.channel || '').toLowerCase().includes(q)) &&
+    (!c || (c === 'INT' ? s.worldwide : s.countries.includes(c))) &&
+    (!cat || s.categories.includes(cat)) &&
+    (!w || s.working));
+}
+
+function renderChannels() {
+  const list = filtered();
+  $('count').textContent = `${list.length.toLocaleString()} streams`;
+  $('list').innerHTML = list.slice(0, shown).map((s, i) => {
+    const dot = s.working === true ? 'ok' : s.working === false ? 'bad' : '';
+    const cats = s.categories.map((c) => meta.categories[c] || c).join(', ');
+    const where = s.worldwide ? 'International' : s.countries.slice(0, 4).map((c) => meta.countries[c]?.name || c).join(', ') + (s.countries.length > 4 ? '…' : '');
+    return `<div class="row">
+      ${s.logo ? `<img class="logo" loading="lazy" src="${esc(s.logo)}" alt="">` : '<span></span>'}
+      <div><div class="title"><span class="dot ${dot}"></span>${esc(s.title)}${s.quality ? ` <span class="meta">${esc(s.quality)}</span>` : ''}</div>
+        <div class="meta">${esc([where, cats, s.labels.join(', ')].filter(Boolean).join(' · '))}</div></div>
+      <button class="copy" data-url="${esc(s.url)}">Copy URL</button></div>`;
+  }).join('') || '<div class="row"><span></span><div class="meta">No channels match.</div></div>';
+  $('more').hidden = list.length <= shown;
+}
+
+function renderPlaylists() {
+  const type = $('ptype').value, kind = $('pworking').checked ? 'working' : 'all';
+  const rows = playlists.filter((p) => p.type === type && p.kind === kind)
+    .sort((a, b) => (['undefined', 'int'].includes(a.code) - ['undefined', 'int'].includes(b.code)) || a.name.localeCompare(b.name));
+  $('ptable').innerHTML = rows.map((p) => `<tr><td>${p.flag ? p.flag + ' ' : ''}${esc(p.name)}</td>
+    <td class="num">${p.count.toLocaleString()}</td><td><code>${esc(root + p.path)}</code></td>
+    <td><button class="copy" data-url="${esc(root + p.path)}">Copy</button></td></tr>`).join('');
+}
+
+document.addEventListener('click', async (e) => {
+  const b = e.target.closest('button.copy[data-url]');
+  if (!b) return;
+  try { await navigator.clipboard.writeText(b.dataset.url); b.textContent = 'Copied'; }
+  catch { prompt('Copy this URL:', b.dataset.url); }
+  setTimeout(() => (b.textContent = b.closest('td') ? 'Copy' : 'Copy URL'), 1200);
+});
+document.querySelectorAll('[data-tab]').forEach((t) => t.addEventListener('click', () => {
+  document.querySelectorAll('[data-tab]').forEach((x) => x.setAttribute('aria-selected', x === t));
+  $('channels').hidden = t.dataset.tab !== 'channels';
+  $('playlists').hidden = t.dataset.tab !== 'playlists';
+}));
+['q', 'country', 'category', 'working'].forEach((id) => $(id).addEventListener('input', () => { shown = 100; renderChannels(); }));
+['ptype', 'pworking'].forEach((id) => $(id).addEventListener('input', renderPlaylists));
+$('more').addEventListener('click', () => { shown += 200; renderChannels(); });
+load().catch((err) => { $('meta').textContent = 'Could not load data: ' + err.message; });
+</script>
+</body>
+</html>

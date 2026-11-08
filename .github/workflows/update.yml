@@ -1,0 +1,71 @@
+name: Update playlists
+
+on:
+  schedule:
+    - cron: '17 4 * * *'   # daily, 04:17 UTC
+  workflow_dispatch:        # "Run workflow" button in the Actions tab
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+env:
+  SITE_URL: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Build playlists and the TV guide channel list
+        run: node scripts/build.mjs --refresh
+
+      # TV guide, using iptv-org's own grabber. If a guide site is down the
+      # playlists are still published, just without a fresh guide.
+      - name: Grab TV guide
+        continue-on-error: true
+        timeout-minutes: 45
+        run: |
+          git clone --depth 1 https://github.com/iptv-org/epg.git ../epg
+          cd ../epg
+          npm ci --no-audit --no-fund
+          mkdir -p "$GITHUB_WORKSPACE/data/guides"
+          npm run grab --- \
+            --channels="$GITHUB_WORKSPACE/data/guide.channels.xml" \
+            --output="$GITHUB_WORKSPACE/data/guides/guide.xml" \
+            --gzip="$GITHUB_WORKSPACE/data/guides/guide.xml.gz" \
+            --days="$(node -p "require('$GITHUB_WORKSPACE/config.json').guides.days")" \
+            --maxConnections=5
+
+      - name: Check which streams answer
+        run: node scripts/check.mjs
+
+      - name: Rebuild with check results and guide
+        run: node scripts/build.mjs
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

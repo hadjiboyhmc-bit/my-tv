@@ -1,0 +1,14 @@
+{
+  "name": "my-tv",
+  "private": true,
+  "type": "module",
+  "engines": { "node": ">=20" },
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "build:fresh": "node scripts/build.mjs --refresh",
+    "check": "node scripts/check.mjs",
+    "check:dk": "node scripts/check.mjs --country dk",
+    "compare": "node scripts/compare.mjs",
+    "all": "node scripts/build.mjs --refresh && node scripts/check.mjs && node scripts/build.mjs"
+  }
+}

@@ -1,0 +1,5 @@
+#EXTM3U
+# Add your own channels here. One #EXTINF line + one URL line per channel.
+# Example:
+# #EXTINF:-1 tvg-id="MyChannel.dk" tvg-logo="https://example.com/logo.png" group-title="General",My Channel
+# https://example.com/live/playlist.m3u8
