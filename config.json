@@ -19,16 +19,18 @@
   },
   "favourites": {
     "countries": ["dk", "se", "no", "uk", "de"],
-    "categories": ["news", "sports", "movies", "kids", "documentary"]
+    "categories": ["news", "sports", "movies", "kids", "documentary"],
+    "skipDead": true
   },
   "guides": {
     "countries": ["dk", "se", "no", "uk", "de"],
     "preferSites": ["tv.nu", "tv24.se", "allente.dk", "sky.com", "i.mjh.nz", "pluto.tv"],
-    "days": 2
+    "days": 1
   },
   "extraGuideUrls": [],
   "check": {
     "timeoutMs": 10000,
     "concurrency": 60
-  }
+  },
+  "guideInPlaylists": false
 }

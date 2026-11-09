@@ -161,7 +161,9 @@ const hasGuide = existsSync('data/guides/guide.xml.gz');
 if (hasGuide) {
   await mkdir('dist/guides', { recursive: true });
   await copyFile('data/guides/guide.xml.gz', 'dist/guides/guide.xml.gz');
-  guideUrls.unshift(SITE_URL ? `${SITE_URL}/guides/guide.xml.gz` : 'guides/guide.xml.gz');
+  // Off by default: some TVs hang while downloading the guide every time a
+  // playlist loads. Add the guide URL in the player's EPG field instead.
+  if (config.guideInPlaylists) guideUrls.unshift(SITE_URL ? `${SITE_URL}/guides/guide.xml.gz` : 'guides/guide.xml.gz');
 }
 
 const catName = (id) => db.categories.get(id)?.name || id;
@@ -232,9 +234,12 @@ async function emitSet(root, list) {
   const favC = config.favourites.countries.map((c) => c.toUpperCase());
   const favCat = config.favourites.categories;
   const rank = (s) => { const i = favCat.findIndex((c) => s.categories.includes(c)); return i === -1 ? favCat.length : i; };
+  // Leave out streams that failed the last check. Geo-blocked ones stay: the
+  // check runs abroad, and they usually work from home.
+  const alive = (s) => !config.favourites.skipDead || s.working !== false || s.labels.includes('Geo-blocked');
   const mine = [];
   for (const c of favC) {
-    const l = [...(byCountry.get(c) || [])].sort((a, b) => rank(a) - rank(b) || a.displayTitle.localeCompare(b.displayTitle));
+    const l = [...(byCountry.get(c) || [])].filter(alive).sort((a, b) => rank(a) - rank(b) || a.displayTitle.localeCompare(b.displayTitle));
     for (const s of l) mine.push({ s, group: `${countryName(c)} - ${s.categories[0] ? catName(s.categories[0]) : 'Undefined'}` });
   }
   await emit(`${root}/mine.m3u`, mine, { kind, type: 'index', name: 'My favourites' });
