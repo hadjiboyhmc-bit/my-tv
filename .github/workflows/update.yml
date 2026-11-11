@@ -62,8 +62,10 @@ jobs:
       # single commit, so the repository does not grow day by day.
       - name: Publish to the playlists branch
         run: |
+          # Only the favourites playlist and the TV guide are published.
           mkdir ../publish
-          tar cf - -C dist --exclude=./working --exclude=./api --exclude=./index.html --exclude=./.nojekyll . | tar xf - -C ../publish
+          cp dist/mine.m3u ../publish/
+          if [ -d dist/guides ]; then cp -r dist/guides ../publish/; fi
           cd ../publish
           git init -q -b playlists
           git add -A
