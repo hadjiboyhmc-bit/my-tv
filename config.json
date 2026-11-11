@@ -18,13 +18,13 @@
     "skipNonHttp": false
   },
   "favourites": {
-    "countries": ["dk", "se", "no", "uk", "de"],
-    "categories": ["news", "sports", "movies", "kids", "documentary"],
+    "countries": ["dk", "fr", "sn", "gm"],
+    "categories": ["sports", "news", "movies", "kids", "documentary"],
     "skipDead": true
   },
   "guides": {
-    "countries": ["dk", "se", "no", "uk", "de"],
-    "preferSites": ["tv.nu", "tv24.se", "allente.dk", "sky.com", "i.mjh.nz", "pluto.tv"],
+    "countries": ["dk", "fr", "sn", "gm"],
+    "preferSites": ["allente.dk", "tv.nu", "programme-tv.net", "canalplus.com", "i.mjh.nz", "pluto.tv"],
     "days": 1
   },
   "extraGuideUrls": [],
